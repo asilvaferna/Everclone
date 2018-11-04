@@ -14,3 +14,18 @@ import CoreData
 public class Notebook: NSManagedObject {
 
 }
+
+extension Notebook {
+    func csv() -> String {
+        let exportedName = name ?? "Default"
+        let exportedCreationDate = (creationDate as Date?)?.creationStringDate() ?? "No date"
+
+        var exportedNotes = ""
+        notes?
+            .map { $0 as? Note }
+            .compactMap { $0 }
+            .forEach { exportedNotes = "\(exportedNotes)\($0.csv())\n" }
+
+        return "\(exportedCreationDate),\(exportedName)\n\(exportedNotes)"
+    }
+}

@@ -85,26 +85,8 @@ private extension NoteListViewController {
 
     func configureNavigationBar() {
         let addButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addNote))
-        let exportButtonItem = UIBarButtonItem(barButtonSystemItem: .action, target: self, action: #selector(exportCSV))
 
-        self.navigationItem.rightBarButtonItems = [addButtonItem, exportButtonItem]
-    }
-
-    func showExportFinishedAlert(_ exportPath: String) {
-        let message = "El archivo CSV se encuentra en \(exportPath)"
-        let alertController = UIAlertController(title: "Exportacion terminada", message: message, preferredStyle: .alert)
-        let dismissAction = UIAlertAction(title: "Dismiss", style: .default)
-        alertController.addAction(dismissAction)
-
-        present(alertController, animated: true)
-    }
-
-    func notesFetchRequest(from notebook: Notebook) -> NSFetchRequest<Note> {
-        let fetchRequest: NSFetchRequest<Note> = Note.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "notebook == %@", notebook)
-        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: true)]
-
-        return fetchRequest
+        self.navigationItem.rightBarButtonItem = addButtonItem
     }
 }
 
@@ -115,49 +97,6 @@ private extension NoteListViewController {
         noteDetailViewController.delegate = self
         let navigationController = UINavigationController(rootViewController: noteDetailViewController)
         self.present(navigationController, animated: true, completion: nil)
-    }
-
-    @objc func exportCSV() {
-
-        coreDataStack.storeContainer.performBackgroundTask { [unowned self] context in
-
-            var results: [Note] = []
-
-            do {
-                results = try self.coreDataStack.managedContext.fetch(self.notesFetchRequest(from: self.notebook))
-            } catch let error as NSError {
-                print("Error: \(error.localizedDescription)")
-            }
-
-            let exportPath = NSTemporaryDirectory() + "export.csv"
-            let exportURL = URL(fileURLWithPath: exportPath)
-            FileManager.default.createFile(atPath: exportPath, contents: Data(), attributes: nil)
-
-            let fileHandle: FileHandle?
-            do {
-                fileHandle = try FileHandle(forWritingTo: exportURL)
-            } catch let error as NSError {
-                print(error.localizedDescription)
-                fileHandle = nil
-            }
-
-            if let fileHandle = fileHandle {
-                for note in results {
-                    fileHandle.seekToEndOfFile()
-                    guard let csvData = note.csv().data(using: .utf8, allowLossyConversion: false) else { return }
-                    fileHandle.write(csvData)
-                }
-
-                fileHandle.closeFile()
-                DispatchQueue.main.async { [weak self] in
-                    self?.showExportFinishedAlert(exportPath)
-                }
-
-            } else {
-                print("no podemos exportar la data")
-            }
-        }
-
     }
 }
 

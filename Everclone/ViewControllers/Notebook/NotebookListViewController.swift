@@ -51,7 +51,8 @@ private extension NotebookListViewController {
         navigationController?.navigationBar.prefersLargeTitles = true
         navigationItem.largeTitleDisplayMode = .always
         let addButton = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addNotebook))
-        navigationItem.rightBarButtonItem = addButton
+        let exportButtonItem = UIBarButtonItem(barButtonSystemItem: .action, target: self, action: #selector(exportCSV))
+        navigationItem.rightBarButtonItems = [addButton, exportButtonItem]
     }
 
     @objc func addNotebook() {
@@ -127,6 +128,29 @@ private extension NotebookListViewController {
             }
             tableView.reloadData()
         }
+    }
+
+    @objc func exportCSV() {
+        var notebooks: [Notebook] = []
+
+        do {
+            notebooks = try self.coreDataStack.managedContext.fetch(Notebook.fetchRequest())
+        } catch let error as NSError {
+            print("Error: \(error.localizedDescription)")
+        }
+
+        var csv = ""
+        notebooks.forEach { csv = "\(csv)\($0.csv())\n" }
+
+        let activityView = UIActivityViewController(activityItems: [csv], applicationActivities: nil)
+        self.present(activityView, animated: true)
+    }
+
+    func notesFetchRequest() -> NSFetchRequest<Notebook> {
+        let fetchRequest: NSFetchRequest<Notebook> = Notebook.fetchRequest()
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: true)]
+
+        return fetchRequest
     }
 }
 
