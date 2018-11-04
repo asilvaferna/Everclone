@@ -52,6 +52,12 @@ final class NoteDetailViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        print(kind.note?.latitude, kind.note?.longitude)
+
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
+        locationManager.startUpdatingLocation()
+
         configure()
     }
 
